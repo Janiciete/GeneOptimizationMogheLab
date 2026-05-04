@@ -1,0 +1,21 @@
+# Large data files
+data/genes_dedup.csv
+indexes/*.db
+indexes/*.sqlite
+outputs/raw_matches.csv
+
+# Logs and temp files
+logs/
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.cursor/
+*.swp
