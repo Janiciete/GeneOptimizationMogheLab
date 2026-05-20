@@ -19,3 +19,8 @@ Thumbs.db
 .vscode/
 .cursor/
 *.swp
+outputs/json_dataset/
+outputs/plant_protein_dataset_confidence.csv
+outputs/plant_protein_dataset_coverage.csv
+outputs/unresolved_entries.csv
+outputs/dataset_summary.md
