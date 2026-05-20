@@ -331,7 +331,7 @@ These include:
 - `indexes/uniprot_index.db`
 - `indexes/phytozome_index.db`
 - `outputs/raw_matches.csv`
-- `taset_confidence.csv`
+- `outputs/plant_protein_dataset_confidence.csv`
 - `outputs/plant_protein_dataset_coverage.csv`
 - `outputs/unresolved_entries.csv`
 - `outputs/dataset_summary.md`
