@@ -24,3 +24,8 @@ outputs/plant_protein_dataset_confidence.csv
 outputs/plant_protein_dataset_coverage.csv
 outputs/unresolved_entries.csv
 outputs/dataset_summary.md
+outputs/phase8_*.csv
+outputs/phase8_summary.md
+outputs/final_confidence_dataset_v2.csv
+outputs/final_coverage_dataset_v2.csv
+logs/phase8_fts_cache.db
