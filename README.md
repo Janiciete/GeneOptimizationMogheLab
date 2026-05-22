@@ -2,44 +2,217 @@
 
 This project builds a plant protein mapping pipeline that converts messy gene/protein entries into structured, confidence-scored datasets linked to UniProt metadata and Phytozome protein sequences.
 
-## Project Goal
-
 The goal is to create a reliable plant protein mapping dataset that can later support downstream computational biology or machine learning work, such as adapting MTGNN-style approaches to plant protein research.
 
-This project does not train MTGNN yet. It focuses only on building the plant protein mapping dataset foundation.
+This project does not train MTGNN yet. It focuses on building the plant protein mapping dataset foundation.
 
-## What the Pipeline Does
+---
+
+## Project Overview
 
 The pipeline takes a raw list of gene/protein names and:
 
-1. Standardizes species information across biological databases.
-2. Classifies each entry by identifier type.
+1. Standardizes species information across Phytozome and UniProt.
+2. Classifies each input entry by identifier type.
 3. Builds searchable UniProt and Phytozome SQLite indexes.
 4. Matches entries to UniProt metadata and/or Phytozome protein sequences.
-5. Assigns confidence, ambiguity, and species-match categories.
-6. Produces final confidence, coverage, unresolved, JSON, and FASTA outputs.
+5. Separates high-confidence linkages from broader candidate linkages.
+6. Exports CSV, JSON, FASTA, audit, unresolved, and organized result files.
+7. Adds Phase 8 expansion logic to recover additional linkages from previously unresolved entries.
 
-## Final Validated Results
+The current project state includes Phases 1–8.
 
-From 23,976 original entries, the pipeline produced:
+---
+
+## Current Validated Results
+
+Original input size:
+
+- 23,976 original gene/protein entries
+
+Phase 6 conservative baseline:
 
 - 376 high-confidence matches
 - 4,868 broader coverage matches
 - 19,108 unresolved entries
 - 266 sequence-linked records
 - 265 unique FASTA sequences after sequence deduplication
-- 23,976 full JSON files
-- 23,976 best-only JSON files
+- 23,976 full JSON files generated locally
+- 23,976 best-only JSON files generated locally
+
+Phase 8 expanded recovery:
+
+- 49 additional high-confidence recovered rows
+- 5,696 additional candidate/coverage recovered rows
+- 5,745 total additional recovered rows
+- 13,363 entries still unresolved after Phase 8
+- 425 final confidence rows in final_confidence_dataset_v2.csv
+- 10,564 final coverage rows in final_coverage_dataset_v2.csv
 
 The difference between 266 sequence-linked records and 265 unique FASTA sequences means that two records reference the same deduplicated Phytozome sequence.
+
+---
+
+## Repository Result Organization
+
+The repository now includes selected organized result files in:
+
+- results/
+
+This folder is intended for easy GitHub viewing and sharing.
+
+### GitHub Results Folder
+
+The GitHub results are organized as:
+
+- results/confidence_linkages/
+- results/candidate_linkages/
+- results/all_linkages/
+- results/README.md
+
+### confidence_linkages/
+
+Use this folder when you want the safest confirmed linkages.
+
+Files:
+
+- results/confidence_linkages/final_confidence_dataset_v2.csv
+  - Phase 6 high-confidence matches plus Phase 8 recovered high-confidence matches.
+  - Contains 425 final high-confidence rows.
+  - This is the safest linkage file to use for downstream computational work.
+
+- results/confidence_linkages/phase8_recovered_confidence.csv
+  - Only the new high-confidence matches recovered by Phase 8.
+  - Contains 49 Phase 8 recovered confidence rows.
+  - Useful for seeing exactly what Phase 8 added to the confirmed dataset.
+
+### candidate_linkages/
+
+Use this folder when you want additional possible linkages that are not all 100% confident.
+
+Files:
+
+- results/candidate_linkages/phase8_recovered_coverage.csv
+  - Phase 8 recovered coverage-tier/candidate matches.
+  - Contains 5,696 additional recovered candidate rows.
+  - Includes phase8_quality_flag and phase8_quality_notes columns.
+  - Rows with warnings should be reviewed before downstream use.
+
+- results/candidate_linkages/phase8_audit_sample.csv
+  - A 50-row stratified audit sample for manual review.
+  - Used to assess whether Phase 8 fuzzy matches are biologically reasonable.
+  - Includes blank manual review columns.
+
+### all_linkages/
+
+Use this folder when you want the broadest combined linkage dataset.
+
+Files:
+
+- results/all_linkages/final_coverage_dataset_v2.csv
+  - Phase 6 coverage dataset plus Phase 8 recovered coverage dataset.
+  - Contains 10,564 broader linkage rows.
+  - Includes high-confidence and candidate-level linkages.
+  - Use source_phase to tell whether a row came from Phase 6 or Phase 8.
+  - Use phase8_quality_flag to identify rows that need additional review.
+
+### GitHub CSV Viewing Note
+
+Large CSVs may not preview fully in the GitHub web interface. If a file preview looks blank or slow, use one of these options:
+
+- Click Raw
+- Click Download raw file
+- Run git pull locally and open the file from the cloned repository
+
+The CSVs are still present even if GitHub preview is limited.
+
+---
+
+## BioHPC Result Organization
+
+On BioHPC, the full working project is located at:
+
+- /local/storage/jedric/1_GeneOptimization/
+
+The original generated outputs are in:
+
+- /local/storage/jedric/1_GeneOptimization/outputs/
+
+A cleaner human-readable copy of important results is in:
+
+- /local/storage/jedric/1_GeneOptimization/organized_results/
+
+### Best BioHPC Files to Use
+
+Most reliable confidence dataset:
+
+- organized_results/01_confidence_linkages/phase6_plus_phase8_final_confidence_dataset_v2.csv
+
+Phase 8-only recovered confidence rows:
+
+- organized_results/01_confidence_linkages/phase8_recovered_confidence_only.csv
+
+Phase 8 recovered candidate rows:
+
+- organized_results/02_candidate_linkages/phase8_recovered_candidate_coverage.csv
+
+Broadest combined coverage dataset:
+
+- organized_results/03_all_linkages/phase6_plus_phase8_final_coverage_dataset_v2.csv
+
+Audit sample for manual review:
+
+- organized_results/04_unresolved_and_review/phase8_audit_sample_for_manual_review.csv
+
+Phase 8 summary:
+
+- organized_results/04_unresolved_and_review/phase8_summary.md
+
+JSON manifest:
+
+- organized_results/06_json_dataset/json_manifest.csv
+
+FASTA sequences:
+
+- organized_results/07_sequences/phase7_sequences.fasta
+
+### Original BioHPC Output Files
+
+The original pipeline outputs remain in outputs/.
+
+Important files include:
+
+- outputs/plant_protein_dataset_confidence.csv
+- outputs/plant_protein_dataset_coverage.csv
+- outputs/unresolved_entries.csv
+- outputs/raw_matches.csv
+- outputs/phase8_recovered_confidence.csv
+- outputs/phase8_recovered_coverage.csv
+- outputs/final_confidence_dataset_v2.csv
+- outputs/final_coverage_dataset_v2.csv
+- outputs/phase8_audit_sample.csv
+- outputs/phase8_summary.md
+
+JSON and FASTA outputs are stored in:
+
+- outputs/json_dataset/full/
+- outputs/json_dataset/best_only/
+- outputs/json_dataset/manifest.csv
+- outputs/json_dataset/sequences.fasta
+
+---
 
 ## Pipeline Phases
 
 ### Phase 1: Species Crosswalk
 
-Script: `scripts/01_build_species_crosswalk.py`
+Script:
 
-Output: `data/species_crosswalk.csv`
+- scripts/01_build_species_crosswalk.py
+
+Output:
+
+- data/species_crosswalk.csv
 
 This phase links species identifiers across Phytozome and UniProt.
 
@@ -51,11 +224,17 @@ Examples:
 
 This matters because different biological databases use different species codes for the same organism.
 
+---
+
 ### Phase 2: Entry Classification
 
-Script: `scripts/02_classify_entries.py`
+Script:
 
-Output: `outputs/classified_entries.csv`
+- scripts/02_classify_entries.py
+
+Output:
+
+- outputs/classified_entries.csv
 
 This phase classifies each raw gene/protein entry into one of five buckets:
 
@@ -74,25 +253,31 @@ Examples:
 - (+)-larreatricin hydroxylase 1 → Bucket D, descriptive name
 - (C/T)ACGTGTC → Bucket E, noise
 
-Phase 2 is a first-pass triage step. It does not decide the final biological match; it decides what matching strategy should be used later.
+Phase 2 is a triage step. It does not decide the final biological match; it decides what matching strategy should be used later.
+
+---
 
 ### Phase 3: UniProt SQLite Index
 
-Script: `scripts/03_build_uniprot_index.py`
+Script:
 
-Local output: `indexes/uniprot_index.db`
+- scripts/03_build_uniprot_index.py
+
+Local output:
+
+- indexes/uniprot_index.db
 
 This phase builds a searchable SQLite index from UniProt plant protein files.
 
 It stores:
 
-- gene name / synonym
-- normalized gene name
+- Gene name / synonym
+- Normalized gene name
 - UniProt accession
 - UniProt entry name
-- organism mnemonic
-- source tier: Swiss-Prot or TrEMBL
-- cross-reference metadata
+- Organism mnemonic
+- Source tier: Swiss-Prot or TrEMBL
+- Cross-reference metadata
 
 The full Phase 3 build inserted over 21 million searchable UniProt rows.
 
@@ -101,39 +286,53 @@ This database is used to answer questions such as:
 - Does this gene symbol exist in UniProt?
 - Which species does the UniProt match belong to?
 - Is the match reviewed Swiss-Prot or unreviewed TrEMBL?
+- Does an input ID appear as a UniProt cross-reference?
+
+---
 
 ### Phase 4: Phytozome Sequence Index
 
-Script: `scripts/04_build_phytozome_index.py`
+Script:
 
-Local output: `indexes/phytozome_index.db`
+- scripts/04_build_phytozome_index.py
+
+Local output:
+
+- indexes/phytozome_index.db
 
 This phase builds a searchable SQLite index from Phytozome plant protein FASTA files.
 
 It stores:
 
 - Phytozome species code
-- scientific name
-- raw FASTA header
-- gene ID
-- base gene ID
-- amino acid sequence
-- sequence length
-- source FASTA file
+- Scientific name
+- Raw FASTA header
+- Gene ID
+- Base gene ID
+- Amino acid sequence
+- Sequence length
+- Source FASTA file
 
 The full Phase 4 build indexed 1,085,219 protein sequences across 37 plant species.
 
-This database is used to answer:
+This database is used to answer questions such as:
 
 - Does this plant locus ID have a protein sequence?
 - Which Phytozome species does it belong to?
 - What is the amino acid sequence length?
+- Can this input be sequence-confirmed?
+
+---
 
 ### Phase 5: Species-Aware Raw Matching
 
-Script: `scripts/05_match_entries.py`
+Script:
 
-Output: `outputs/raw_matches.csv`
+- scripts/05_match_entries.py
+
+Output:
+
+- outputs/raw_matches.csv
 
 This phase matches the classified entries against the UniProt and Phytozome indexes.
 
@@ -153,365 +352,439 @@ Important match categories include:
 
 This matters because a gene symbol like CHS, PAL, or HSP70 may exist in many plants. The system avoids falsely assigning a gene to the wrong species by checking whether the expected species matches the database result.
 
+---
+
 ### Phase 6: Final CSV Dataset Generation
 
-Script: `scripts/06_generate_datasets.py`
+Script:
+
+- scripts/06_generate_datasets.py
 
 Outputs:
 
-- `outputs/plant_protein_dataset_confidence.csv`
-- `outputs/plant_protein_dataset_coverage.csv`
-- `outputs/unresolved_entries.csv`
-- `outputs/dataset_summary.md`
+- outputs/plant_protein_dataset_confidence.csv
+- outputs/plant_protein_dataset_coverage.csv
+- outputs/unresolved_entries.csv
+- outputs/dataset_summary.md
 
 This phase filters raw matches into usable datasets.
 
 Confidence dataset:
 
-- `outputs/plant_protein_dataset_confidence.csv`
 - Strictest dataset
 - Best for reliable downstream computational work
 - Contains sequence-confirmed and species-confirmed UniProt matches
 
 Coverage dataset:
 
-- `outputs/plant_protein_dataset_coverage.csv`
 - Broader dataset
 - Includes useful but less certain entries
 - Useful for exploration and manual review
 
-Unresolved entries:
+Unresolved dataset:
 
-- `outputs/unresolved_entries.csv`
 - Contains entries that were not safely resolved
 - Includes descriptive protein names, unknown prefixes, no-match rows, species mismatches, and noise
 
-Summary report:
+Phase 6 remains the conservative baseline of the project.
 
-- `outputs/dataset_summary.md`
-- Human-readable summary of dataset counts, filtering rules, and unresolved categories
+---
 
 ### Phase 7: JSON and FASTA Export
 
-Script: `scripts/07_export_json_dataset.py`
+Script:
 
-Local output directory: `outputs/json_dataset/`
+- scripts/07_export_json_dataset.py
+
+Local output directory:
+
+- outputs/json_dataset/
 
 This phase exports the mapped protein dataset into a downstream-friendly JSON/FASTA format.
 
 It creates:
 
-- `outputs/json_dataset/full/`
-- `outputs/json_dataset/best_only/`
-- `outputs/json_dataset/sequences.fasta`
-- `outputs/json_dataset/manifest.csv`
-- `outputs/json_dataset/json_dataset_summary.md`
+- outputs/json_dataset/full/
+- outputs/json_dataset/best_only/
+- outputs/json_dataset/sequences.fasta
+- outputs/json_dataset/manifest.csv
+- outputs/json_dataset/json_dataset_summary.md
 
-The `full/` folder contains one JSON file per original entry. Each JSON stores all candidate matches that can be reconstructed from the matching output.
+The full/ folder contains one JSON file per original entry. Each JSON stores all candidate matches that can be reconstructed from the matching output.
 
-Use `full/` for:
+Use full/ for:
 
-- manual review
-- comparative analysis
-- debugging ambiguous matches
-- maximum-completeness workflows
+- Manual review
+- Comparative analysis
+- Debugging ambiguous matches
+- Maximum-completeness workflows
 
-The `best_only/` folder contains one JSON file per original entry, but only the selected best match is stored.
+The best_only/ folder contains one JSON file per original entry, but only the selected best match is stored.
 
 Each best-only file also includes:
 
 - match_count
 - has_alternates
 
-Use `best_only/` for:
+Use best_only/ for:
 
-- cleaner downstream workflows
-- faster per-protein lookup
-- machine learning preparation
+- Cleaner downstream workflows
+- Faster per-protein lookup
+- Machine learning preparation
 - MTGNN-style input preparation
 
-The `sequences.fasta` file stores amino acid sequences separately from the JSON files.
+The sequences.fasta file stores amino acid sequences separately from the JSON files.
 
 The JSON files do not contain full amino acid sequences. Instead, they reference sequences by ID, such as:
 
-`"sequence_ref": "seq_Atha_AT1G01120.1"`
+- sequence_ref: seq_Atha_AT1G01120.1
 
-The actual sequence is stored in FASTA format in `outputs/json_dataset/sequences.fasta`.
+The actual sequence is stored in FASTA format in outputs/json_dataset/sequences.fasta.
 
 This keeps JSON files small and avoids duplicating long biological sequences.
 
-The `manifest.csv` file maps each protein JSON ID to its output files. It includes:
+---
 
-- protein_json_id
-- entity
-- full_json_path
-- best_only_json_path
-- dataset_membership
-- has_sequence
-- sequence_ref
-- match_count
-- best_match_category
+### Phase 8: Unresolved-Entry Expansion
 
-## How to Generate the Outputs
+Script:
 
-Run phases in order.
+- scripts/08_expand_unresolved_matches.py
 
-Build species crosswalk:
+Outputs:
 
-`python scripts/01_build_species_crosswalk.py`
+- outputs/phase8_expanded_matches.csv
+- outputs/phase8_recovered_confidence.csv
+- outputs/phase8_recovered_coverage.csv
+- outputs/phase8_still_unresolved.csv
+- outputs/phase8_audit_sample.csv
+- outputs/final_confidence_dataset_v2.csv
+- outputs/final_coverage_dataset_v2.csv
+- outputs/phase8_summary.md
 
-Classify input entries:
+Phase 8 attempts to recover additional linkages from entries that were unresolved after Phase 6.
 
-`python scripts/02_classify_entries.py`
+It uses four recovery paths:
 
-Build UniProt index in test mode:
+1. Manual override support, if data/manual_name_overrides.csv exists
+2. Cross-reference matching against UniProt and Phytozome IDs
+3. FTS5 description matching over UniProt descriptions
+4. Unknown-prefix global gene-symbol lookup
 
-`python scripts/03_build_uniprot_index.py --test-limit 1000 --overwrite`
+Phase 8 includes quality controls:
 
-Build UniProt index in full mode:
+- Pre-filtering of unrecoverable/noisy entries
+- Plant-organism filtering
+- Description-overlap score thresholds
+- Confidence vs coverage separation
+- phase8_quality_flag and phase8_quality_notes warning columns
+- 50-row audit sample for manual review
 
-`python scripts/03_build_uniprot_index.py --full --overwrite`
+Quality flags include:
 
-Build Phytozome sequence index in test mode:
+- ok
+- broad_taxon_warning
+- generic_description_warning
+- virus_term_warning
+- non_land_plant_warning
+- multiple_warnings
 
-`python scripts/04_build_phytozome_index.py --test-files 3 --test-records 1000 --overwrite`
+Phase 8 is an expansion layer, not a replacement for the conservative Phase 6 baseline.
 
-Build Phytozome sequence index in full mode:
+---
 
-`python scripts/04_build_phytozome_index.py --full --overwrite`
+## How to Generate Outputs on BioHPC
 
-Run raw matching in test mode:
+Run all commands from the repository directory:
 
-`python scripts/05_match_entries.py --test-limit 1000 --overwrite`
+- cd /local/storage/jedric/1_GeneOptimization
 
-Run raw matching in full mode:
+Run phases in order:
 
-`python scripts/05_match_entries.py --full --overwrite`
+- python scripts/01_build_species_crosswalk.py
+- python scripts/02_classify_entries.py
+- python scripts/03_build_uniprot_index.py --full --overwrite
+- python scripts/04_build_phytozome_index.py --full --overwrite
+- python scripts/05_match_entries.py --full --overwrite
+- python scripts/06_generate_datasets.py --full --overwrite
+- python scripts/07_export_json_dataset.py --full --candidate-mode summary --overwrite
+- python scripts/08_expand_unresolved_matches.py --full --overwrite --fts-cache logs/phase8_fts_cache.db
 
-Generate final CSV datasets in test mode:
+---
 
-`python scripts/06_generate_datasets.py --test-limit 1000 --overwrite`
+## How to Access Particular Results
 
-Generate final CSV datasets in full mode:
+### Safest Confirmed Linkages
 
-`python scripts/06_generate_datasets.py --full --overwrite`
+Use this when you want only the most reliable results.
 
-Export JSON and FASTA outputs in test mode:
+GitHub:
 
-`python scripts/07_export_json_dataset.py --test-limit 1000 --candidate-mode summary --overwrite`
+- results/confidence_linkages/final_confidence_dataset_v2.csv
 
-Export JSON and FASTA outputs in full mode:
+BioHPC organized copy:
 
-`python scripts/07_export_json_dataset.py --full --candidate-mode summary --overwrite`
+- organized_results/01_confidence_linkages/phase6_plus_phase8_final_confidence_dataset_v2.csv
 
-## Where to Find the Data
+BioHPC original output:
 
-### Files visible in GitHub
+- outputs/final_confidence_dataset_v2.csv
 
-The repository tracks the scripts and selected small outputs.
+Meaning:
 
-Tracked code files include:
+- Phase 6 high-confidence matches
+- Plus Phase 8 recovered high-confidence matches
+- 425 rows total
 
-- `scripts/01_build_species_crosswalk.py`
-- `scripts/02_classify_entries.py`
-- `scripts/03_build_uniprot_index.py`
-- `scripts/04_build_phytozome_index.py`
-- `scripts/05_match_entries.py`
-- `scripts/06_generate_datasets.py`
-- `scripts/07_export_json_dataset.py`
+---
 
-`outputs/classified_entries.csv` may also be visible in GitHub if it was previously committed.
+### Phase 8-Only Newly Confirmed Linkages
 
-### Files generated locally but not shown in GitHub
+Use this when you want to see only what Phase 8 added to the confirmed set.
+
+GitHub:
+
+- results/confidence_linkages/phase8_recovered_confidence.csv
+
+BioHPC organized copy:
+
+- organized_results/01_confidence_linkages/phase8_recovered_confidence_only.csv
+
+BioHPC original output:
+
+- outputs/phase8_recovered_confidence.csv
+
+Meaning:
+
+- 49 new high-confidence recovered rows from Phase 8
+
+---
+
+### Candidate Linkages
+
+Use this when you want additional possible linkages that are not all 100% confident.
+
+GitHub:
+
+- results/candidate_linkages/phase8_recovered_coverage.csv
+
+BioHPC organized copy:
+
+- organized_results/02_candidate_linkages/phase8_recovered_candidate_coverage.csv
+
+BioHPC original output:
+
+- outputs/phase8_recovered_coverage.csv
+
+Meaning:
+
+- 5,696 additional candidate rows recovered by Phase 8
+- Includes description matches, unknown-prefix symbol matches, and cross-reference candidates
+- Use phase8_quality_flag and phase8_quality_notes to identify rows needing review
+
+---
+
+### Broadest All-Linkage Dataset
+
+Use this when you want the broadest available dataset.
+
+GitHub:
+
+- results/all_linkages/final_coverage_dataset_v2.csv
+
+BioHPC organized copy:
+
+- organized_results/03_all_linkages/phase6_plus_phase8_final_coverage_dataset_v2.csv
+
+BioHPC original output:
+
+- outputs/final_coverage_dataset_v2.csv
+
+Meaning:
+
+- Phase 6 coverage rows plus Phase 8 recovered coverage rows
+- 10,564 rows total
+- Includes both high-confidence and candidate-level linkages
+- Use source_phase to tell whether a row came from Phase 6 or Phase 8
+- Use phase8_quality_flag to identify rows needing manual review
+
+---
+
+### Manual Review and Audit Files
+
+Use these when you want to inspect uncertain matches or tune future recovery logic.
+
+GitHub:
+
+- results/candidate_linkages/phase8_audit_sample.csv
+
+BioHPC organized copy:
+
+- organized_results/04_unresolved_and_review/phase8_audit_sample_for_manual_review.csv
+- organized_results/04_unresolved_and_review/phase8_summary.md
+
+BioHPC original output:
+
+- outputs/phase8_audit_sample.csv
+- outputs/phase8_summary.md
+
+Meaning:
+
+- phase8_audit_sample.csv contains a 50-row manual review sample
+- phase8_summary.md contains Phase 8 thresholds, counts, and recovery summaries
+
+---
+
+### JSON and FASTA Outputs
+
+JSON and FASTA outputs are generated locally on BioHPC and are not fully committed to GitHub because they include tens of thousands of generated files.
+
+BioHPC original output:
+
+- outputs/json_dataset/full/
+- outputs/json_dataset/best_only/
+- outputs/json_dataset/manifest.csv
+- outputs/json_dataset/sequences.fasta
+
+BioHPC organized copy:
+
+- organized_results/06_json_dataset/json_manifest.csv
+- organized_results/07_sequences/phase7_sequences.fasta
+
+Use full/ when you want all candidate matches per protein.
+
+Use best_only/ when you want only the selected best match per protein.
+
+Use sequences.fasta when you need amino acid sequences.
+
+---
+
+## GitHub Viewing Notes
+
+Large CSV files may not preview fully in the GitHub web interface.
+
+If a CSV preview looks blank, use one of these options:
+
+- Click Raw
+- Click Download raw file
+- Run git pull locally and open the file from the cloned repository
+
+The files can still be present even if the GitHub preview is limited.
+
+---
+
+## Files Generated Locally but Not Fully Tracked in GitHub
 
 Large generated files are intentionally ignored by Git and are created locally on BioHPC.
 
 These include:
 
-- `indexes/uniprot_index.db`
-- `indexes/phytozome_index.db`
-- `outputs/raw_matches.csv`
-- `outputs/plant_protein_dataset_confidence.csv`
-- `outputs/plant_protein_dataset_coverage.csv`
-- `outputs/unresolved_entries.csv`
-- `outputs/dataset_summary.md`
-- `outputs/json_dataset/`
+- indexes/uniprot_index.db
+- indexes/phytozome_index.db
+- outputs/raw_matches.csv
+- outputs/json_dataset/
+- logs/phase8_fts_cache.db
 
-They are ignored because they are large generated artifacts and can be rebuilt from the scripts.
+Selected CSV results are tracked in results/, while the full local working outputs remain in outputs/ on BioHPC.
 
-### Where to access JSON files locally
-
-After running Phase 7, access JSON outputs here:
-
-- `outputs/json_dataset/full/`
-- `outputs/json_dataset/best_only/`
-
-Examples:
-
-`ls outputs/json_dataset/best_only | head`
-
-Pretty-print one JSON file:
-
-`python -m json.tool outputs/json_dataset/best_only/protein_002243.json | head -80`
-
-Access the shared FASTA file:
-
-`outputs/json_dataset/sequences.fasta`
-
-Count FASTA records:
-
-`grep -c "^>" outputs/json_dataset/sequences.fasta`
-
-Access the manifest:
-
-`outputs/json_dataset/manifest.csv`
-
-Preview the manifest:
-
-`head outputs/json_dataset/manifest.csv`
-
-## Why the JSON Files Are Not Shown on GitHub
-
-The JSON export creates tens of thousands of generated files:
-
-- 23,976 files in `outputs/json_dataset/full/`
-- 23,976 files in `outputs/json_dataset/best_only/`
-
-These are intentionally not committed to GitHub because they are generated artifacts. Instead, they can be regenerated locally with:
-
-`python scripts/07_export_json_dataset.py --full --candidate-mode summary --overwrite`
-
-This keeps the repository smaller, cleaner, and easier to maintain.
+---
 
 ## Validation Commands
 
-Check Phase 6 final CSV outputs:
+### Phase 6 Validation
 
-`wc -l outputs/plant_protein_dataset_confidence.csv`
+Run:
 
-`wc -l outputs/plant_protein_dataset_coverage.csv`
+- wc -l outputs/plant_protein_dataset_confidence.csv
+- wc -l outputs/plant_protein_dataset_coverage.csv
+- wc -l outputs/unresolved_entries.csv
+- wc -l outputs/raw_matches.csv
 
-`wc -l outputs/unresolved_entries.csv`
+Expected full-run line counts, including header row:
 
-`wc -l outputs/raw_matches.csv`
+- 377 outputs/plant_protein_dataset_confidence.csv
+- 4869 outputs/plant_protein_dataset_coverage.csv
+- 19109 outputs/unresolved_entries.csv
+- 23977 outputs/raw_matches.csv
 
-Expected full-run counts:
+---
 
-- 377 `outputs/plant_protein_dataset_confidence.csv`
-- 4869 `outputs/plant_protein_dataset_coverage.csv`
-- 19109 `outputs/unresolved_entries.csv`
-- 23977 `outputs/raw_matches.csv`
+### Phase 7 JSON/FASTA Validation
 
-CSV files include one header row.
+Run:
 
-Check Phase 7 JSON/FASTA outputs:
-
-`find outputs/json_dataset/full -name "*.json" | wc -l`
-
-`find outputs/json_dataset/best_only -name "*.json" | wc -l`
-
-`wc -l outputs/json_dataset/manifest.csv`
-
-`grep -c "^>" outputs/json_dataset/sequences.fasta`
+- find outputs/json_dataset/full -name "*.json" | wc -l
+- find outputs/json_dataset/best_only -name "*.json" | wc -l
+- wc -l outputs/json_dataset/manifest.csv
+- grep -c "^>" outputs/json_dataset/sequences.fasta
 
 Expected full-run counts:
 
-- 23976
-- 23976
-- 23977
-- 265
+- 23976 full JSON files
+- 23976 best-only JSON files
+- 23977 manifest lines including header
+- 265 FASTA sequence records
 
-Validate JSON files parse correctly:
+---
 
-`python - <<'PY'
-import json, glob
+### Phase 8 Validation
 
-bad = []
-for folder in ["full", "best_only"]:
-    for p in glob.glob(f"outputs/json_dataset/{folder}/*.json"):
-        try:
-            with open(p) as f:
-                json.load(f)
-        except Exception as e:
-            bad.append((p, str(e)))
+Run:
 
-print("bad JSON files:", len(bad))
-PY`
+- wc -l outputs/phase8_expanded_matches.csv
+- wc -l outputs/phase8_recovered_confidence.csv
+- wc -l outputs/phase8_recovered_coverage.csv
+- wc -l outputs/phase8_still_unresolved.csv
+- wc -l outputs/final_confidence_dataset_v2.csv
+- wc -l outputs/final_coverage_dataset_v2.csv
+- wc -l outputs/phase8_audit_sample.csv
 
-Expected:
+Expected full-run line counts, including header row:
 
-`bad JSON files: 0`
+- 5746 outputs/phase8_expanded_matches.csv
+- 50 outputs/phase8_recovered_confidence.csv
+- 5697 outputs/phase8_recovered_coverage.csv
+- 13364 outputs/phase8_still_unresolved.csv
+- 426 outputs/final_confidence_dataset_v2.csv
+- 10565 outputs/final_coverage_dataset_v2.csv
+- 51 outputs/phase8_audit_sample.csv
 
-Validate JSON sequence references:
-
-`python - <<'PY'
-import json, glob
-
-fasta_ids = set()
-with open("outputs/json_dataset/sequences.fasta") as f:
-    for line in f:
-        if line.startswith(">"):
-            fasta_ids.add(line[1:].split("|")[0])
-
-missing = []
-refs_checked = 0
-
-for p in glob.glob("outputs/json_dataset/**/*.json", recursive=True):
-    with open(p) as f:
-        obj = json.load(f)
-
-    bm = obj.get("best_match")
-    if isinstance(bm, dict):
-        phy = bm.get("phytozome")
-        if isinstance(phy, dict) and phy.get("sequence_ref"):
-            refs_checked += 1
-            if phy["sequence_ref"] not in fasta_ids:
-                missing.append((p, phy["sequence_ref"]))
-
-    matches = obj.get("matches", [])
-    if isinstance(matches, list):
-        for m in matches:
-            if not isinstance(m, dict):
-                continue
-            phy = m.get("phytozome")
-            if isinstance(phy, dict) and phy.get("sequence_ref"):
-                refs_checked += 1
-                if phy["sequence_ref"] not in fasta_ids:
-                    missing.append((p, phy["sequence_ref"]))
-
-print("FASTA sequence IDs:", len(fasta_ids))
-print("JSON sequence refs checked:", refs_checked)
-print("missing sequence refs:", len(missing))
-PY`
-
-Expected:
-
-`missing sequence refs: 0`
+---
 
 ## Output Interpretation
 
-### Confidence Dataset
+### Confidence Linkages
 
-Use this when you want the safest matches.
+Use confidence files when you want the safest matches.
 
-Contains:
+They include:
 
-- sequence_confirmed
-- species_confirmed_uniprot
+- Sequence-confirmed matches
+- Species-confirmed UniProt matches
+- Phase 8 cross-reference/sequence-confirmed recovered rows
 
-### Coverage Dataset
+### Candidate Linkages
 
-Use this when you want more rows and are willing to review ambiguity.
+Use candidate files when you want more possible linkages and are willing to review uncertainty.
 
-Contains:
+They may include:
 
-- sequence_confirmed
-- species_confirmed_uniprot
-- ambiguous_but_useful
+- Multi-species ambiguous description matches
+- Single-species description candidates
+- Unknown-prefix global symbol matches
+- Cross-reference matches without full species confirmation
 
-### Unresolved Dataset
+Rows with warning flags should be manually reviewed.
 
-Use this to improve the pipeline later.
+### All Linkages
+
+Use all-linkage files when you want the broadest available dataset.
+
+The all-linkage dataset includes Phase 6 coverage rows plus Phase 8 recovered coverage rows.
+
+### Unresolved Entries
+
+Use unresolved files to improve the pipeline later.
 
 Common unresolved reasons include:
 
@@ -523,11 +796,15 @@ Common unresolved reasons include:
 - unknown_prefix_no_match
 - noise_or_not_gene
 
+---
+
 ## Notes
 
 - This project currently builds the plant protein mapping dataset only.
 - It does not train MTGNN yet.
 - It does not create embeddings yet.
 - It does not build graph edges yet.
-- Large generated files are intentionally ignored by GitHub.
-- The JSON and FASTA outputs are local generated artifacts and can be recreated by running Phase 7.
+- Phase 6 remains the conservative baseline.
+- Phase 8 adds broader recovered linkages but keeps warnings and confidence labels separate.
+- The most reliable GitHub result file is results/confidence_linkages/final_confidence_dataset_v2.csv.
+- The broadest GitHub result file is results/all_linkages/final_coverage_dataset_v2.csv.
