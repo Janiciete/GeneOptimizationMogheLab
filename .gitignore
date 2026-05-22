@@ -29,3 +29,4 @@ outputs/phase8_summary.md
 outputs/final_confidence_dataset_v2.csv
 outputs/final_coverage_dataset_v2.csv
 logs/phase8_fts_cache.db
+!outputs/phase8_outputs.tar.gz
